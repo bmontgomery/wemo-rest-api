@@ -1,0 +1,17 @@
+{
+  "name": "express-bootstrap",
+  "version": "0.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "BSD",
+  "dependencies": {
+    "express": "~3.4.0",
+    "upnp-client": "~0.0.1",
+    "xml2js": "~0.2.3"
+  },
+  "devDependencies": {}
+}

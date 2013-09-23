@@ -6,35 +6,65 @@ var app = express();
 var UpnpControlPoint = require("./lib/upnp-controlpoint").UpnpControlPoint;
 var wemo = require("./lib/wemo");
 
-// hold a reference tot he Wemo switch
+// hold a reference to the Wemo switch
 var wemoSwitch;
 var currentBinaryState;
+var lastCommandDate = null;
+
+// how many milliseconds the server waits to send a signal to the switch (to protect whatever is plugged into it)
+var maxInterval = 1000; 
+
+function validateLastCommandTiming() {
+  if (lastCommandDate === null) {
+    lastCommandDate = new Date();
+    return true;
+  }
+
+  if ((new Date()) - lastCommandDate > maxInterval) {
+    lastCommandDate = new Date();
+    return true;
+  }
+
+  return false;
+};
 
 // Set up API URLs
 app.get('/on', function(req, res) {
   if (wemoSwitch) {
-    wemoSwitch.setBinaryState(true);
-    res.send('Wemo switch turned on.');
+    if (validateLastCommandTiming()) {
+      wemoSwitch.setBinaryState(true);
+      res.send(200, 'Wemo switch turned on.');
+    } else {
+      res.send(409, 'You must wait some time between requests.');
+    }
   } else {
-    res.send('No Wemo switch detected.');
+    res.send(500, 'No Wemo switch detected.');
   }
 });
 
 app.get('/off', function(req, res) {
   if (wemoSwitch) {
-    wemoSwitch.setBinaryState(false);
-    res.send('Wemo switch turned off.');
+    if (validateLastCommandTiming()) {
+      wemoSwitch.setBinaryState(false);
+      res.send(200, 'Wemo switch turned off.');
+    } else {
+      res.send(409, 'You must wait some time between requests.');
+    }
   } else {
-    res.send('No Wemo switch detected.');
+    res.send(500, 'No Wemo switch detected.');
   }
 });
 
 app.get('/toggle', function(req, res) {
   if (wemoSwitch) {
-    wemoSwitch.setBinaryState(!currentBinaryState);
-    res.send('Wemo switch toggled.');
+    if (validateLastCommandTiming()) {
+      wemoSwitch.setBinaryState(!currentBinaryState);
+      res.send(200, 'Wemo switch toggled.');
+    } else {
+      res.send(409, 'You must wait some time between requests.');
+    }
   } else {
-    res.send('No Wemo switch detected.');
+    res.send(500, 'No Wemo switch detected.');
   }
 });
 

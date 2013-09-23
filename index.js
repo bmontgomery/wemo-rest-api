@@ -8,6 +8,7 @@ var wemo = require("./lib/wemo");
 
 // hold a reference tot he Wemo switch
 var wemoSwitch;
+var currentBinaryState;
 
 // Set up API URLs
 app.get('/on', function(req, res) {
@@ -28,10 +29,22 @@ app.get('/off', function(req, res) {
   }
 });
 
+app.get('/toggle', function(req, res) {
+  if (wemoSwitch) {
+    wemoSwitch.setBinaryState(!currentBinaryState);
+    res.send('Wemo switch toggled.');
+  } else {
+    res.send('No Wemo switch detected.');
+  }
+});
+
 // set up URLs to handle API
 var handleDevice = function(device) {
   if (device.deviceType === wemo.WemoControllee.deviceType) {
     wemoSwitch = new wemo.WemoControllee(device);
+    wemoSwitch.on('BinaryState', function(stateValue) {
+      currentBinaryState = stateValue;
+    });
     console.log('Wemo Switch found!');
   }
 };

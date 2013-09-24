@@ -2,6 +2,11 @@
 var express = require('express');
 var app = express();
 
+// get configurations from config.js file
+var config = require ('./config.js');
+
+// Set up basic auth
+
 // Wemo requires
 var UpnpControlPoint = require("./lib/upnp-controlpoint").UpnpControlPoint;
 var wemo = require("./lib/wemo");
@@ -12,7 +17,7 @@ var currentBinaryState;
 var lastCommandDate = null;
 
 // how many milliseconds the server waits to send a signal to the switch (to protect whatever is plugged into it)
-var maxInterval = 1000; 
+var maxInterval = 500;
 
 function validateLastCommandTiming() {
   if (lastCommandDate === null) {
@@ -28,6 +33,19 @@ function validateLastCommandTiming() {
   return false;
 };
 
+function sendWaitValidationResponse(res) {
+  res.send(409, 'You must wait ' + maxInterval.toString() + ' ms between requests.');
+}
+
+function sendNoWemoResponse(res) {
+  res.send(500, 'No Wemo switch detected.');
+}
+
+// Set up basic HTTP auth
+app.use(express.basicAuth(function(username, password) {
+  return username === config.username && password === config.password;
+}));
+
 // Set up API URLs
 app.get('/on', function(req, res) {
   if (wemoSwitch) {
@@ -35,10 +53,10 @@ app.get('/on', function(req, res) {
       wemoSwitch.setBinaryState(true);
       res.send(200, 'Wemo switch turned on.');
     } else {
-      res.send(409, 'You must wait some time between requests.');
+      sendWaitValidationResponse(res); 
     }
   } else {
-    res.send(500, 'No Wemo switch detected.');
+    sendNoWemoResponse(res);
   }
 });
 
@@ -48,10 +66,10 @@ app.get('/off', function(req, res) {
       wemoSwitch.setBinaryState(false);
       res.send(200, 'Wemo switch turned off.');
     } else {
-      res.send(409, 'You must wait some time between requests.');
+      sendWaitValidationResponse(res); 
     }
   } else {
-    res.send(500, 'No Wemo switch detected.');
+    sendNoWemoResponse(res);
   }
 });
 
@@ -61,10 +79,10 @@ app.get('/toggle', function(req, res) {
       wemoSwitch.setBinaryState(!currentBinaryState);
       res.send(200, 'Wemo switch toggled.');
     } else {
-      res.send(409, 'You must wait some time between requests.');
+      sendWaitValidationResponse(res); 
     }
   } else {
-    res.send(500, 'No Wemo switch detected.');
+    sendNoWemoResponse(res);
   }
 });
 

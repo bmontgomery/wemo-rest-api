@@ -1,6 +1,6 @@
 var config = {};
 
-config.username = 'bmontgomery';
-config.password = 'redcarsarefast';
+config.username = 'username';
+config.password = 'password';
 
 module.exports = config;

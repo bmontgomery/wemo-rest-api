@@ -1,5 +1,7 @@
 // Web app requires
 var express = require('express');
+var https = require('https');
+var fs = require('fs');
 var app = express();
 
 // get configurations from config.js file
@@ -108,6 +110,15 @@ cp.search();
 
 // Start the web server
 var port = process.env.PORT || 3000;
-app.listen(port);
 
-console.log('Express app listening on port ' + port.toString());
+var privateKey = fs.readFileSync(config.privateKey).toString();
+var certificate = fs.readFileSync(config.certificate).toString();
+
+var options = {
+  key: privateKey,
+  cert: certificate
+};
+
+https.createServer(options, app).listen(port, function() {
+  console.log('Express app listening on port ' + port);
+});

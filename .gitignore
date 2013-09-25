@@ -1,1 +1,3 @@
 node_modules
+certificate.crt
+privateKey.key

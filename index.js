@@ -15,6 +15,7 @@ var wemo = require("./lib/wemo");
 
 // hold a reference to the Wemo switch
 var wemoSwitch;
+var wemoSwitches ={};
 var currentBinaryState;
 var lastCommandDate = null;
 
@@ -50,9 +51,14 @@ app.use(express.basicAuth(function(username, password) {
 
 // Set up API URLs
 app.get('/on', function(req, res) {
-  if (wemoSwitch) {
+  var selectedSwitch=null;
+  if(req.query.device!==null){
+	var selectedSwitch = wemoSwitches[req.query.device];
+  }
+	
+  if (selectedSwitch) {
     if (validateLastCommandTiming()) {
-      wemoSwitch.setBinaryState(true);
+      selectedSwitch.setBinaryState(true);
       res.send(200, 'Wemo switch turned on.');
     } else {
       sendWaitValidationResponse(res); 
@@ -63,9 +69,13 @@ app.get('/on', function(req, res) {
 });
 
 app.get('/off', function(req, res) {
-  if (wemoSwitch) {
+  var selectedSwitch=null;
+  if(req.query.device!==null){
+	var selectedSwitch = wemoSwitches[req.query.device];
+  }
+  if (selectedSwitch) {
     if (validateLastCommandTiming()) {
-      wemoSwitch.setBinaryState(false);
+      selectedSwitch.setBinaryState(false);
       res.send(200, 'Wemo switch turned off.');
     } else {
       sendWaitValidationResponse(res); 
@@ -76,9 +86,13 @@ app.get('/off', function(req, res) {
 });
 
 app.get('/toggle', function(req, res) {
-  if (wemoSwitch) {
+  var selectedSwitch=null;
+  if(req.query.device!==null){
+	var selectedSwitch = wemoSwitches[req.query.device];
+  }
+  if (selectedSwitch) {
     if (validateLastCommandTiming()) {
-      wemoSwitch.setBinaryState(!currentBinaryState);
+      selectedSwitch.setBinaryState(!currentBinaryState);
       res.send(200, 'Wemo switch toggled.');
     } else {
       sendWaitValidationResponse(res); 
@@ -88,14 +102,39 @@ app.get('/toggle', function(req, res) {
   }
 });
 
+// helper function for arrays
+var indexOf = function(needle) {
+    if(typeof Array.prototype.indexOf === 'function') {
+        indexOf = Array.prototype.indexOf;
+    } else {
+        indexOf = function(needle) {
+            var i = -1, index = -1;
+
+            for(i = 0; i < this.length; i++) {
+                if(this[i] === needle) {
+                    index = i;
+                    break;
+                }
+            }
+
+            return index;
+        };
+    }
+
+    return indexOf.call(this, needle);
+};
+
+
 // set up URLs to handle API
 var handleDevice = function(device) {
-  if (device.deviceType === wemo.WemoControllee.deviceType) {
+
+  if (indexOf.call( wemo.WemoControllee.deviceType, device.deviceType ) >=0 ) {
     wemoSwitch = new wemo.WemoControllee(device);
-    wemoSwitch.on('BinaryState', function(stateValue) {
+	wemoSwitches[wemoSwitch.device.friendlyName]  = wemoSwitch;
+    wemoSwitches[wemoSwitch.device.friendlyName].on('BinaryState', function(stateValue) {
       currentBinaryState = stateValue;
     });
-    console.log('Wemo Switch found!');
+    console.log('Wemo Switch ' +wemoSwitch.device.friendlyName+ ' found!');
   }
 };
 
